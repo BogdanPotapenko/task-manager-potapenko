@@ -1,4 +1,5 @@
 import { reactive, computed } from 'vue'
+import { logInfo, logWarn } from '../logging/logger.js'
 
 function createTask(id, title, priority) {
   return {
@@ -22,6 +23,7 @@ export const taskStore = reactive({
   addTask(title, priority) {
     const task = createTask(this.nextId++, title, priority)
     this.tasks.push(task)
+    logInfo(`Task added: "${title}" with priority ${priority}`)
     return task
   },
 
@@ -29,6 +31,9 @@ export const taskStore = reactive({
     const index = findTaskIndex(this.tasks, id)
     if (index !== -1) {
       this.tasks.splice(index, 1)
+      logInfo(`Task removed: id=${id}`)
+    } else {
+      logWarn(`Task not found for removal: id=${id}`)
     }
   },
 
@@ -36,6 +41,7 @@ export const taskStore = reactive({
     const index = findTaskIndex(this.tasks, id)
     if (index !== -1) {
       this.tasks[index].completed = !this.tasks[index].completed
+      logInfo(`Task toggled: id=${id}, completed=${this.tasks[index].completed}`)
     }
   },
 

@@ -20,7 +20,9 @@ export const taskStore = reactive({
   filter: 'all',
 
   addTask(title, priority) {
-    this.tasks.push(createTask(this.nextId++, title, priority))
+    const task = createTask(this.nextId++, title, priority)
+    this.tasks.push(task)
+    return task
   },
 
   removeTask(id) {

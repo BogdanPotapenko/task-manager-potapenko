@@ -65,7 +65,7 @@ jobs:
         run: |
           echo "Running smoke tests on staging..."
           EXPECTED=1
-          ACTUAL=1
+          ACTUAL=0
           if [ "$EXPECTED" != "$ACTUAL" ]; then
             echo "Smoke test FAILED"
             exit 1

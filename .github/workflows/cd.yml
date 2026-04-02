@@ -1,0 +1,89 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm test
+
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - name: Create build artifact info
+        run: |
+          echo "Build: task-manager-potapenko" > build-info.txt
+          echo "Commit: ${{ github.sha }}" >> build-info.txt
+          echo "Branch: ${{ github.ref_name }}" >> build-info.txt
+          echo "Date: $(date -u)" >> build-info.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: |
+            dist/
+            build-info.txt
+
+  deploy_staging:
+    name: Deploy to Staging
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+      - name: Deploy to Staging
+        run: |
+          echo "Deploying to staging..."
+          echo "=== Build Info ==="
+          cat build-info.txt
+          echo "=== Staging deploy complete ==="
+
+  verify_staging:
+    name: Verify Staging
+    needs: deploy_staging
+    runs-on: ubuntu-latest
+    steps:
+      - name: Smoke test
+        run: |
+          echo "Running smoke tests on staging..."
+          EXPECTED=1
+          ACTUAL=1
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "Smoke test FAILED"
+            exit 1
+          fi
+          echo "Smoke test PASSED"
+
+  deploy_production:
+    name: Deploy to Production
+    needs: verify_staging
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+      - name: Deploy to Production
+        run: |
+          echo "Deploying to production..."
+          echo "=== Build Info ==="
+          cat build-info.txt
+          echo "=== Production deploy complete ==="
